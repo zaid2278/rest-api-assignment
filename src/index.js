@@ -1,26 +1,53 @@
-const express = require('express');
-const app = express();
-const port = 3000;
+const express = require("express");
+const { v4: uuidv4 } = require("uuid");
 
-// Middleware to parse JSON bodies
+
+
+const app = express();
 app.use(express.json());
 
-// **************************************************************
-// Put your implementation here
-// If necessary to add imports, please do so in the section above
+let users = [];
 
-app.get('/', (req, res) => {
-    res.send('Hello World!');
+app.post("/users", (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name and email are required" });
+  }
+
+  const newUser = { id: uuidv4(), name, email };
+  users.push(newUser);
+  return res.status(201).json(newUser);
 });
 
-// Do not touch the code below this comment
-// **************************************************************
+app.get("/users/:id", (req, res) => {
+  const { id } = req.params;
+  const user = users.find(u => u.id === id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  return res.json(user);
+});
 
-// Start the server (only if not in test mode)
-if (process.env.NODE_ENV !== 'test') {
-    app.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`);
-    });
-}
+app.put("/users/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
 
-module.exports = app; // Export the app for testing
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name and email are required" });
+  }
+
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ error: "User not found" });
+
+  users[idx] = { id, name, email };
+  return res.json(users[idx]);
+});
+
+app.delete("/users/:id", (req, res) => {
+  const { id } = req.params;
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ error: "User not found" });
+
+  users.splice(idx, 1);
+  return res.status(204).send();
+});
+
+module.exports = app;
